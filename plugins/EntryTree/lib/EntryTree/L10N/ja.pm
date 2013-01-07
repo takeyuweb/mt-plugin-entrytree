@@ -14,6 +14,7 @@ use vars qw( %Lexicon );
     'Entry Parent ID' => '親記事ID',
     'Entry Children' => '子記事',
     "Add a child of '[_1]'" => '「[_1]」の子記事を作成する',
+    'Root Entries' => '根ブログ記事（親記事がない）',
 );
 
 1;

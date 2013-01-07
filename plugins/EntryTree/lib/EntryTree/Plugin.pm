@@ -8,6 +8,18 @@ use EntryTree::Util qw( get_parent get_children );
 
 our $plugin = MT->component( 'EntryTree' );
 
+sub _system_filters {
+    return {
+        et_root_entries => {
+            label => 'Root Entries',
+            items => sub {
+                [ { type => 'et_parent', args => { input => '0' } } ],;
+            },
+            order => 1000,
+        },
+    };
+}
+
 sub _list_properties {
     my $app = MT->instance;
     return {
@@ -148,10 +160,163 @@ sub _cb_tp_edit_entry {
         field_label => $plugin->translate( 'Entry Parent ID' ),
         label_class => "top-label",
         required => '0',
-        field_html => <<MTML,
+        field_html => <<'MTML',
 <input type="text" name="et_parent_id" value="<mt:var name='et_parent_id' escape='html'>" />
 MTML
     };
+    
+    push @{ $param->{ field_loop } }, {
+        field_id => 'et_children',,
+        lock_field => '0',
+        field_name => 'et_children',
+        show_field => '1',
+        field_label => $plugin->translate( 'Entry Children' ),
+        label_class => "top-label",
+        required => '0',
+        field_html => <<'MTML',
+<mt:If name="id">
+    <mt:Entries id="$id" _et_ignore_status="1">
+        <ul id="entry-children-list">
+            <mt:EntryChildren blog_ids="$blog_id" _et_ignore_status="1">
+                <li>id:<mt:EntryID> <mt:EntryTitle escape="html"></li>
+            </mt:EntryChildren>
+        </ul>
+    </mt:Entries>
+</mt:If>
+MTML
+    };
+}
+
+sub _cb_entry_post_remove {
+    my ( $cb, $entry ) = @_;
+    my $parent = get_parent( $entry );
+    my @children = get_children( $entry );
+    foreach my $child ( @children ) {
+        if ( $parent ) {
+            $child->et_parent_id( $parent->id );
+        } else {
+            $child->et_parent_id( 0 );
+        }
+        $child->save or die $child->errstr;
+    }
+    return 1;
+}
+
+sub _filter_entries_ignore_status {
+    my ( $ctx, $args, $cond ) = @_;
+    my $terms = $ctx->{ terms };
+    delete $terms->{ status };
+}
+
+
+sub _filter_entries_children {
+    my ( $ctx, $args, $cond ) = @_;
+    my $e = $ctx->stash('entry')
+        or return $ctx->_no_entry_error();
+    
+    if ( $e->id ) {
+        my $terms = $ctx->{ terms };
+        $terms->{ et_parent_id } = $e->id;
+    }
+}
+
+sub _filter_et_parent_id {
+    my ( $ctx, $args, $cond ) = @_;
+    my $et_parent_id = $args->{ et_parent_id };
+    $et_parent_id = '0' unless $et_parent_id;
+    my $terms = $ctx->{ terms };
+    $terms->{ et_parent_id } = $et_parent_id;
+}
+
+sub _filter_et_siblings {
+    my ( $ctx, $args, $cond ) = @_;
+    my $e = $ctx->stash('entry')
+        or return $ctx->_no_entry_error();
+    
+    my $terms = $ctx->{ terms };
+    if ( $e->id ) {
+        my $filters = $ctx->{ filters };
+        push @$filters, sub { 
+            return $_[0]->id != $e->id;
+        }
+    }
+    $terms->{ et_parent_id } = $e->et_parent_id;
+}
+
+sub _hdlr_entry_children {
+    my ( $ctx, $args, $cond ) = @_;
+    $args->{ _et_children } = 1;
+    $ctx->invoke_handler( 'entries', $args, $cond );
+}
+
+sub _hdlr_entry_parent {
+    my ( $ctx, $args, $cond ) = @_;
+    
+    my $e = $ctx->stash('entry')
+        or return $ctx->_no_entry_error();
+    return '' unless $e->et_parent_id;
+    
+    $args->{ id } = $e->et_parent_id;
+    
+    $ctx->invoke_handler( 'entries', $args, $cond );
+}
+
+sub _hdlr_entry_siblings {
+    my ( $ctx, $args, $cond ) = @_;
+    my $e = $ctx->stash('entry')
+        or return $ctx->_no_entry_error();
+    return '' unless $e->et_parent_id;
+    
+    $args->{ _et_siblings } = 1;
+    $ctx->invoke_handler( 'entries', $args, $cond );
+}
+
+sub _hdlr_entry_ancestors {
+    my ( $ctx, $args, $cond ) = @_;
+    $args->{ _et_ancestors } = 1;
+    $ctx->invoke_handler( 'entries', $args, $cond );
+}
+
+sub _filter_et_ancestors {
+    my ( $ctx, $args, $cond ) = @_;
+    my $e = $ctx->stash('entry')
+        or return $ctx->_no_entry_error();
+    
+    my @ids = ();
+    my $cursor = $e;
+    while ( $cursor = get_parent( $cursor ) ) {
+        push @ids, $cursor->id;
+    }
+    my $terms = $ctx->{ terms };
+    $terms->{ id } =\@ids;
+}
+
+sub _hdlr_entry_descendants {
+    my ( $ctx, $args, $cond ) = @_;
+    $args->{ _et_descendants } = 1;
+    $ctx->invoke_handler( 'entries', $args, $cond );
+}
+
+sub _filter_et_descendants {
+    my ( $ctx, $args, $cond ) = @_;
+    my $e = $ctx->stash('entry')
+        or return $ctx->_no_entry_error();
+    
+    my @ids = _trace_descendants( $e );
+    my $terms = $ctx->{ terms };
+    $terms->{ id } =\@ids;
+}
+
+sub _trace_descendants {
+    my ( $entry ) = @_;
+    my @descendant_ids;
+    my @children = get_children( $entry );
+    foreach my $child ( @children ) {
+        push @descendant_ids, $child->id;
+        my @ids = _trace_descendants( $child );
+        push @descendant_ids, @ids;
+    }
+    return @descendant_ids;
 }
 
 1;

@@ -15,5 +15,31 @@ object_types:
 list_properties:
     entry: $entrytree::EntryTree::Plugin::_list_properties
 
+system_filters:
+    entry: $entrytree::EntryTree::Plugin::_system_filters
+
 callbacks:
     MT::App::CMS::template_param.edit_entry: $entrytree::EntryTree::Plugin::_cb_tp_edit_entry
+    MT::Entry::post_remove: $entrytree::EntryTree::Plugin::_cb_entry_post_remove
+
+tags:
+    block:
+        EntryParent: $entrytree::EntryTree::Plugin::_hdlr_entry_parent
+        EntryChildren: $entrytree::EntryTree::Plugin::_hdlr_entry_children
+        EntrySiblings: $entrytree::EntryTree::Plugin::_hdlr_entry_siblings
+        EntryAncestors: $entrytree::EntryTree::Plugin::_hdlr_entry_ancestors
+        EntryDescendants: $entrytree::EntryTree::Plugin::_hdlr_entry_descendants
+    filters:
+        Entries:
+            _et_ignore_status:
+                handler: $entrytree::EntryTree::Plugin::_filter_entries_ignore_status
+            _et_children:
+                handler: $entrytree::EntryTree::Plugin::_filter_entries_children
+            _et_parent_id:
+                handler: $entrytree::EntryTree::Plugin::_filter_et_parent_id
+            _et_siblings:
+                handler: $entrytree::EntryTree::Plugin::_filter_et_siblings
+            _et_ancestors:
+                handler: $entrytree::EntryTree::Plugin::_filter_et_ancestors
+            _et_descendants:
+                handler: $entrytree::EntryTree::Plugin::_filter_et_descendants
