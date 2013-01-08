@@ -16,19 +16,19 @@ mt-plugin-entrytree
 
 親記事を取得
 
-### EntryChildren
+### MTEntryChildren
 
 子記事を取得
 
-### EntrySiblings
+### MTEntrySiblings
 
 兄弟記事を取得
 
-### EntryAncestors
+### MTEntryAncestors
 
 祖先記事を取得
 
-### EntryDescendants
+### MTEntryDescendants
 
 子孫記事を取得
 
@@ -42,7 +42,7 @@ mt-plugin-entrytree
 
 各テンプレートタグは MTEntries と同じモディファイアを利用できます。（内部的に MTEntries の処理を流用しています）
 
-## Contributing to mt-plugin-httpuseragent
+## Contributing to mt-plugin-entrytree
 
 Fork, fix, then send me a pull request.
 
