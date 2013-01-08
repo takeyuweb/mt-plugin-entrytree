@@ -319,4 +319,33 @@ sub _trace_descendants {
     return @descendant_ids;
 }
 
+sub _cb_build_page {
+    my ( $cb, %args ) = @_;
+    my $at = $args{ archive_type };
+    my $entry = $args{ entry };
+    
+    return unless ( $at eq 'Individual' && defined( $entry ) );
+    _rebuild_parnt_entry( $entry );
+}
+
+sub _cb_post_delete_archive_file {
+    my ( $cb, $file, $at, $entry ) = @_;
+    
+    return unless ( $at eq 'Individual' && defined( $entry ) );
+    _rebuild_parnt_entry( $entry );
+}
+
+sub _rebuild_parnt_entry {
+    my ( $entry ) = @_;
+    
+    my $parent = get_parent( $entry );
+    if ( $parent ) {
+        MT->instance->rebuild_entry(
+            Entry => $parent,
+            Blog => $parent->blog,
+            BuildDependencies => 1
+        );
+    }
+}
+
 1;

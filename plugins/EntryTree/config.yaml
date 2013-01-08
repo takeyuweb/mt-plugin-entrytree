@@ -21,6 +21,8 @@ system_filters:
 callbacks:
     MT::App::CMS::template_param.edit_entry: $entrytree::EntryTree::Plugin::_cb_tp_edit_entry
     MT::Entry::post_remove: $entrytree::EntryTree::Plugin::_cb_entry_post_remove
+    build_page: $entrytree::EntryTree::Plugin::_cb_build_page
+    post_delete_archive_file: $entrytree::EntryTree::Plugin::_cb_post_delete_archive_file
 
 tags:
     block:
