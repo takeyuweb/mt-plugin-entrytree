@@ -25,6 +25,8 @@ callbacks:
     post_delete_archive_file: $entrytree::EntryTree::Plugin::_cb_post_delete_archive_file
 
 tags:
+    function:
+        EntryGenealogyPath: $entrytree::EntryTree::Plugin::_hdlr_entry_genealogy_path
     block:
         EntryParent: $entrytree::EntryTree::Plugin::_hdlr_entry_parent
         EntryChildren: $entrytree::EntryTree::Plugin::_hdlr_entry_children
@@ -41,7 +43,5 @@ tags:
                 handler: $entrytree::EntryTree::Plugin::_filter_et_parent_id
             _et_siblings:
                 handler: $entrytree::EntryTree::Plugin::_filter_et_siblings
-            _et_ancestors:
-                handler: $entrytree::EntryTree::Plugin::_filter_et_ancestors
             _et_descendants:
                 handler: $entrytree::EntryTree::Plugin::_filter_et_descendants

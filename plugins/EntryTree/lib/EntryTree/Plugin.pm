@@ -273,22 +273,38 @@ sub _hdlr_entry_siblings {
 
 sub _hdlr_entry_ancestors {
     my ( $ctx, $args, $cond ) = @_;
-    $args->{ _et_ancestors } = 1;
-    $ctx->invoke_handler( 'entries', $args, $cond );
-}
-
-sub _filter_et_ancestors {
-    my ( $ctx, $args, $cond ) = @_;
     my $e = $ctx->stash('entry')
         or return $ctx->_no_entry_error();
-    
-    my @ids = ();
-    my $cursor = $e;
-    while ( $cursor = get_parent( $cursor ) ) {
-        push @ids, $cursor->id;
+    my @entries = ();
+    while ( $e = get_parent( $e ) ) {
+        push @entries, $e;
     }
-    my $terms = $ctx->{ terms };
-    $terms->{ id } =\@ids;
+    return '' unless scalar @entries;
+    @entries = reverse( @entries ) if $args->{ 'reverse' };
+    local $ctx->{ __stash }->{ entry } = undef;
+    local $ctx->{ __stash }->{ entries } = \@entries;
+    # no_resort
+    local $args->{ sort_by } = undef;
+    local $args->{ sort_order } = undef;
+    local $ctx->{ archive_type } = undef;
+    return $ctx->invoke_handler( 'entries', $args, $cond );
+}
+
+sub _hdlr_entry_genealogy_path {
+    my ( $ctx, $args, $cond ) = @_;
+
+    my $e = $ctx->stash('entry')
+        or return $ctx->_no_entry_error();
+    my @file = ();
+    do {
+        local $ctx->{ archive_type } = 'Individual';
+        local $ctx->{ __stash }->{ entry } = $e;
+        my $builder = $ctx->stash('builder');
+        my $tok = $builder->compile( $ctx, '<mt:FileTemplate format="%-b">' );
+        my $file = $builder->build( $ctx, $tok, $cond );
+        push @file, $file;
+    } while ( $e = get_parent( $e ) );
+    return join( '/', reverse( @file ) );
 }
 
 sub _hdlr_entry_descendants {
